@@ -1,21 +1,23 @@
 'use strict'
 
-let cli = require('heroku-cli-util')
-let co = require('co')
+const cli      = require('heroku-cli-util')
+const co       = require('co')
+const releases = require('../../lib/releases');
 
 function* run (context, heroku) {
-    let releases = yield heroku.request({
-          path: `/apps/${context.app}/releases`,
-          headers: { 'Range': 'version ..; order=desc' }
-        })
-    cli.log(`Slugs in ${context.app}`)
-    for (let r of releases.filter((r) => r.slug)) cli.log(`v${r.version}: ${r.slug.id}`)
+  const rels = yield releases.GetReleases(heroku, context.app);
+
+  cli.log(`Slugs in ${context.app}`)
+
+  for (const r of rels.filter((r) => r.slug)) {
+    cli.log(`v${r.version}: ${r.slug.id}`)
+  }
 }
 
 module.exports = {
-    topic: 'slugs',
-    description: 'list recent slugs on application',
-    needsAuth: true,
-    needsApp: true,
-    run: cli.command(co.wrap(run))
+  topic: 'slugs',
+  description: 'list recent slugs on application',
+  needsAuth: true,
+  needsApp: true,
+  run: cli.command(co.wrap(run))
 }

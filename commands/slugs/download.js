@@ -1,21 +1,19 @@
+'use strict'
+
 let cli      = require('heroku-cli-util')
 let flags    = require('cli-engine-heroku').flags;
 let co       = require('co')
 let download = require('../../lib/download')
+let slugs    = require('../../lib/slugs');
 
 function* run (context, heroku) {
   const exec = require('child_process').execSync
 
-  let id = context.args.slug_id
-  if (!id) {
-    let releases = yield heroku.request({
-      path: `/apps/${context.app}/releases`,
-      headers: { 'Range': 'version ..; order=desc' }
-    })
-    id = releases.filter((r) => r.slug)[0].slug.id
-  }
-  let slug = yield heroku.request({path: `/apps/${context.app}/slugs/${id}`})
+  const slug = yield slugs.FindByLatestOrId(
+    heroku, context.app, context.args.slug_id)
+
   exec(`mkdir ${context.app}`)
+
   yield download(slug.blob.url, `${context.app}/slug.tar.gz`, {progress: true})
   if (!context.flags['no-extract']) {
     exec(`tar -xf ${context.app}/slug.tar.gz -C ${context.app}`)

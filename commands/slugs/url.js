@@ -1,19 +1,16 @@
-let cli      = require('heroku-cli-util')
-let co       = require('co')
+'use strict'
+
+const cli      = require('heroku-cli-util')
+const co       = require('co')
+const slugs    = require('../../lib/slugs');
 
 function* run (context, heroku) {
   const exec = require('child_process').execSync
 
-  let id = context.args.slug_id
-  if (!id) {
-    let releases = yield heroku.request({
-      path: `/apps/${context.app}/releases`,
-      headers: { 'Range': 'version ..; order=desc' }
-    })
-    id = releases.filter((r) => r.slug)[0].slug.id
-  }
-  let slug = yield heroku.request({path: `/apps/${context.app}/slugs/${id}`})
-  cli.log(slug.blob.url);
+  const slug = yield slugs.FindByLatestOrId(
+    heroku, context.app, context.args.slug_id)
+
+  cli.log(slug.blob.url)
 }
 
 module.exports = {
